@@ -64,6 +64,7 @@ DIRNAME = os.path.dirname(__file__)
 
 class Certificado(object):
     def __init__(self):
+        self.stream_certificado = None
         self.arquivo     = ''
         self.senha       = ''
         self.chave       = ''
@@ -73,10 +74,13 @@ class Certificado(object):
         self._data_inicio_validade = None
         self._data_fim_validade    = None
         self._doc_xml    = None
+        
 
     def prepara_certificado_arquivo_pfx(self):
         # Lendo o arquivo pfx no formato pkcs12 como binário
-        pkcs12 = crypto.load_pkcs12(open(self.arquivo, 'rb').read(), self.senha)
+        if self.stream_certificado is None:        
+            self.stream_certificado = open(self.arquivo, 'rb').read()
+        pkcs12 = crypto.load_pkcs12(self.stream_certificado, self.senha)
 
         # Retorna a string decodificada da chave privada
         self.chave = crypto.dump_privatekey(crypto.FILETYPE_PEM, pkcs12.get_privatekey())
@@ -85,7 +89,9 @@ class Certificado(object):
         self.prepara_certificado_txt(crypto.dump_certificate(crypto.FILETYPE_PEM, pkcs12.get_certificate()))
 
     def prepara_certificado_arquivo_pem(self):
-        self.prepara_certificado_txt(open(self.arquivo, 'rb').read())
+        if self.stream_certificado is None:        
+            self.stream_certificado = open(self.arquivo, 'rb').read()
+        self.prepara_certificado_txt(self.stream_certificado)
 
     def prepara_certificado_txt(self, cert_txt):
         #

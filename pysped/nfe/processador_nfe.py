@@ -108,6 +108,7 @@ class ProcessoNFe(object):
         self.webservice = webservice
         self.envio = envio
         self.resposta = resposta
+        self.arquivos = []   #Usado para salvar o xml e nome dos arquivos gerados     
 
     def __repr__(self):
         return 'Processo: ' + webservices_2.METODO_WS[self.webservice]['metodo']
@@ -309,32 +310,40 @@ class ProcessadorNFe(object):
         envio.idLote.valor = numero_lote
 
         envio.validar()
+        
+        nome_envio_lote = self.caminho + unicode(envio.idLote.valor).strip().rjust(15, '0') + '-env-lot.xml'
         if self.salvar_arquivos:
-            for n in lista_nfes:
+            for n in lista_nfes:                
                 n.monta_chave()
                 arq = open(self.caminho + n.chave + '-nfe.xml', 'w')
                 arq.write(n.xml.encode('utf-8'))
                 arq.close
 
-            arq = open(self.caminho + unicode(envio.idLote.valor).strip().rjust(15, '0') + '-env-lot.xml', 'w')
+            arq = open(nome_envio_lote, 'w')
             arq.write(envio.xml.encode('utf-8'))
             arq.close()
+
+        #Adiciona arquivos que serão enviados a resposta.
+        for n in lista_nfes:
+            n.monta_chave()            
+            processo.arquivos.append({ 'arquivo': self.caminho + n.chave + '-nfe.xml', 'xml': n.xml })            
+        processo.arquivos.append({ 'arquivo': nome_envio_lote, 'xml': envio.xml })
 
         self._conectar_servico(WS_NFE_ENVIO_LOTE, envio, resposta)
 
         #resposta.validar()
-        if self.salvar_arquivos:
-            nome_arq = self.caminho + unicode(envio.idLote.valor).strip().rjust(15, '0') + '-rec'
+        nome_arq = self.caminho + unicode(envio.idLote.valor).strip().rjust(15, '0') + '-rec'
+        if resposta.cStat.valor != '103':
+            nome_arq += '-rej.xml'
+        else:
+            nome_arq += '.xml'
 
-            if resposta.cStat.valor != '103':
-                nome_arq += '-rej.xml'
-            else:
-                nome_arq += '.xml'
-
+        if self.salvar_arquivos:            
             arq = open(nome_arq, 'w')
             arq.write(resposta.xml.encode('utf-8'))
             arq.close()
-
+        
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': resposta.xml })
         return processo
 
     def consultar_recibo(self, ambiente=None, numero_recibo=None):
@@ -355,44 +364,50 @@ class ProcessadorNFe(object):
         envio.nRec.valor  = numero_recibo
 
         envio.validar()
+        nome_arquivo_envio = self.caminho + unicode(envio.nRec.valor).strip().rjust(15, '0') + '-ped-rec.xml'
         if self.salvar_arquivos:
-            arq = open(self.caminho + unicode(envio.nRec.valor).strip().rjust(15, '0') + '-ped-rec.xml', 'w')
+            arq = open(nome_arquivo_envio, 'w')
             arq.write(envio.xml.encode('utf-8'))
             arq.close()
+            
+        processo.arquivos.append({ 'arquivo': nome_arquivo_envio, 'xml': envio.xml })
 
         self._conectar_servico(WS_NFE_CONSULTA_RECIBO, envio, resposta, ambiente)
+        
+        nome_arq = self.caminho + unicode(envio.nRec.valor).strip().rjust(15, '0') + '-pro-rec'
+        if resposta.cStat.valor != '104':
+            nome_arq += '-rej.xml'
+        else:
+            nome_arq += '.xml'
 
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': resposta.xml })
+                
         #resposta.validar()
         if self.salvar_arquivos:
-            nome_arq = self.caminho + unicode(envio.nRec.valor).strip().rjust(15, '0') + '-pro-rec'
-
-            if resposta.cStat.valor != '104':
-                nome_arq += '-rej.xml'
-            else:
-                nome_arq += '.xml'
-
             arq = open(nome_arq, 'w')
             arq.write(resposta.xml.encode('utf-8'))
             arq.close()
+           
+        for pn in resposta.protNFe:
+            nome_arq = self.caminho + unicode(pn.infProt.chNFe.valor).strip().rjust(44, '0') + '-pro-nfe-'
 
+            # NF-e autorizada
+            if pn.infProt.cStat.valor == '100':
+                nome_arq += 'aut.xml'
+
+            # NF-e denegada
+            elif pn.infProt.cStat.valor in ('110', '301', '302'):
+                nome_arq += 'den.xml'
+
+            # NF-e rejeitada
+            else:
+                nome_arq += 'rej.xml'
+
+            processo.arquivos.append({ 'arquivo': nome_arq, 'xml': pn.xml })
             #
             # Salvar os resultados dos processamentos
             #
-            for pn in resposta.protNFe:
-                nome_arq = self.caminho + unicode(pn.infProt.chNFe.valor).strip().rjust(44, '0') + '-pro-nfe-'
-
-                # NF-e autorizada
-                if pn.infProt.cStat.valor == '100':
-                    nome_arq += 'aut.xml'
-
-                # NF-e denegada
-                elif pn.infProt.cStat.valor in ('110', '301', '302'):
-                    nome_arq += 'den.xml'
-
-                # NF-e rejeitada
-                else:
-                    nome_arq += 'rej.xml'
-
+            if self.salvar_arquivos:
                 arq = open(nome_arq, 'w')
                 arq.write(pn.xml.encode('utf-8'))
                 arq.close()
@@ -423,8 +438,11 @@ class ProcessadorNFe(object):
         self.certificado.assina_xmlnfe(envio)
 
         envio.validar()
+        
+        nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-ped-can.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': envio.xml })
         if self.salvar_arquivos:
-            arq = open(self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-ped-can.xml', 'w')
+            arq = open(nome_arq, 'w')
             arq.write(envio.xml.encode('utf-8'))
             arq.close()
 
@@ -452,28 +470,36 @@ class ProcessadorNFe(object):
 
             processo.processo_cancelamento_nfe = processo_cancelamento_nfe
 
+        
+        nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-pro-can-'
+        # Cancelamento autorizado
+        if resposta.infCanc.cStat.valor == '101':
+            nome_arq += 'aut.xml'
+        else:
+            nome_arq += 'rej.xml'
+
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': resposta.xml })        
         if self.salvar_arquivos:
-            nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-pro-can-'
-
-            # Cancelamento autorizado
-            if resposta.infCanc.cStat.valor == '101':
-                nome_arq += 'aut.xml'
-            else:
-                nome_arq += 'rej.xml'
-
             arq = open(nome_arq, 'w')
             arq.write(resposta.xml.encode('utf-8'))
             arq.close()
 
-            # Se for autorizado, monta o processo de cancelamento
-            if resposta.infCanc.cStat.valor == '101':
-                nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-proc-canc-nfe.xml'
+        # Se for autorizado, monta o processo de cancelamento
+        if resposta.infCanc.cStat.valor == '101':
+            nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-proc-canc-nfe.xml'
+            processo.arquivos.append({ 'arquivo': nome_arq, 'xml': processo_cancelamento_nfe.xml })
+            
+            if self.salvar_arquivos:
                 arq = open(nome_arq, 'w')
                 arq.write(processo_cancelamento_nfe.xml.encode('utf-8'))
                 arq.close()
 
-                # Estranhamente, o nome desse arquivo, pelo manual, deve ser chave-can.xml
-                nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-can.xml'
+            
+            # Estranhamente, o nome desse arquivo, pelo manual, deve ser chave-can.xml
+            nome_arq = self.caminho + unicode(envio.infCanc.chNFe.valor).strip().rjust(44, '0') + '-can.xml'
+            processo.arquivos.append({ 'arquivo': nome_arq, 'xml': processo_cancelamento_nfe.xml }) #TODO Verificar acho que não precisa desse.
+            
+            if self.salvar_arquivos:
                 arq = open(nome_arq, 'w')
                 arq.write(processo_cancelamento_nfe.xml.encode('utf-8'))
                 arq.close()
