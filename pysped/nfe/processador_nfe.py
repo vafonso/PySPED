@@ -733,6 +733,77 @@ class ProcessadorNFe(object):
 
                 yield proc_recibo
 
+    def processar_nota_diretamente(self, nfe, consultar_nota=True):
+        #
+        # Definir o caminho geral baseado na 1ª NF-e
+        #
+        caminho_original = self.caminho        
+        nfe.monta_chave()
+        self.caminho = caminho_original
+        ambiente = nfe.infNFe.ide.tpAmb.valor
+        self.caminho = self.monta_caminho_nfe(ambiente=ambiente, chave_nfe=nfe.chave)
+
+        if consultar_nota:
+            #
+            # Verificar se a nota já não foi emitada antes. 
+            #        
+            self.caminho = caminho_original
+            proc_consulta = self.consultar_nota(ambiente=ambiente, chave_nfe=nfe.chave)
+            yield proc_consulta
+    
+            #
+            # Se a nota já constar na SEFAZ
+            #
+            if not (
+                ((self.versao == '1.10') and (proc_consulta.resposta.infProt.cStat.valor in ('217', '999',)))
+                or
+                ((self.versao == '2.00') and (proc_consulta.resposta.cStat.valor in ('217', '999',)))
+            ):
+                #
+                # Interrompe todo o processo
+                #
+                return
+
+        #
+        # Nenhuma das notas estava já enviada, enviá-las então
+        #                
+        lista_nfes = [nfe]
+        self.caminho = caminho_original
+        self.caminho = self.monta_caminho_nfe(ambiente=ambiente, chave_nfe=nfe.chave)
+        proc_envio = self.enviar_lote(lista_nfes=lista_nfes)
+        yield proc_envio
+
+        ret_envi_nfe = proc_envio.resposta
+
+        #
+        # Deu certo?
+        #
+        if ret_envi_nfe.cStat.valor == '103':
+            #
+            # Aguarda o tempo do processamento antes da consulta
+            #
+            time.sleep(ret_envi_nfe.infRec.tMed.valor * 1.3)
+
+            proc_recibo = self.consultar_recibo(ambiente=ret_envi_nfe.tpAmb.valor, numero_recibo=ret_envi_nfe.infRec.nRec.valor)
+
+            #
+            # Tenta receber o resultado do processamento do lote
+            #
+            tentativa = 0
+            while proc_recibo.resposta.cStat.valor == '105' and tentativa < self.maximo_tentativas_consulta_recibo:
+                time.sleep(ret_envi_nfe.infRec.tMed.valor * 1.5)
+                tentativa += 1
+                proc_recibo = self.consultar_recibo(ambiente=ret_envi_nfe.tpAmb.valor, numero_recibo=ret_envi_nfe.infRec.nRec.valor)
+
+            # Montar os processos das NF-es
+            dic_protNFe = proc_recibo.resposta.dic_protNFe
+            dic_procNFe = proc_recibo.resposta.dic_procNFe
+
+            self.caminho = caminho_original
+            self.montar_processo_lista_notas(lista_nfes, dic_protNFe, dic_procNFe)
+
+            yield proc_recibo
+
     def montar_processo_lista_notas(self, lista_nfes, dic_protNFe, dic_procNFe):
         for nfe in lista_nfes:
             if nfe.chave in dic_protNFe:

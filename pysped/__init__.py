@@ -48,4 +48,4 @@ from .nfe import *
 #from .nfe import manual_300
 
 
-from .cte import *
+#from .cte import *
