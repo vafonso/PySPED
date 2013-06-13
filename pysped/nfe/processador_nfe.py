@@ -545,8 +545,10 @@ class ProcessadorNFe(object):
         self.certificado.assina_xmlnfe(envio)
 
         envio.validar()
+        nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-ped-inu.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': envio.xml })
         if self.salvar_arquivos:
-            arq = open(self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-ped-inu.xml', 'w')
+            arq = open(nome_arq, 'w')
             arq.write(envio.xml.encode('utf-8'))
             arq.close()
 
@@ -569,28 +571,34 @@ class ProcessadorNFe(object):
 
             processo.processo_inutilizacao_nfe = processo_inutilizacao_nfe
 
+        
+        nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-pro-inu-'
+        # Inutilização autorizada
+        if resposta.infInut.cStat.valor == '102':
+            nome_arq += 'aut.xml'
+        else:
+            nome_arq += 'rej.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': resposta.xml })
+        
         if self.salvar_arquivos:
-            nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-pro-inu-'
-
-            # Inutilização autorizada
-            if resposta.infInut.cStat.valor == '102':
-                nome_arq += 'aut.xml'
-            else:
-                nome_arq += 'rej.xml'
-
             arq = open(nome_arq, 'w')
             arq.write(resposta.xml.encode('utf-8'))
             arq.close()
 
-            # Se for autorizada, monta o processo de inutilização
-            if resposta.infInut.cStat.valor == '102':
-                nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-proc-inut-nfe.xml'
+        # Se for autorizada, monta o processo de inutilização
+        if resposta.infInut.cStat.valor == '102':
+            nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-proc-inut-nfe.xml'
+            processo.arquivos.append({ 'arquivo': nome_arq, 'xml': processo_inutilizacao_nfe.xml })
+            
+            if self.salvar_arquivos:
                 arq = open(nome_arq, 'w')
                 arq.write(processo_inutilizacao_nfe.xml.encode('utf-8'))
                 arq.close()
 
-                # Estranhamente, o nome desse arquivo, pelo manual, deve ser chave-inu.xml
-                nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-inu.xml'
+            # Estranhamente, o nome desse arquivo, pelo manual, deve ser chave-inu.xml
+            nome_arq = self.caminho + unicode(envio.chave).strip().rjust(41, '0') + '-inu.xml'
+            processo.arquivos.append({ 'arquivo': nome_arq, 'xml': processo_inutilizacao_nfe.xml })
+            if self.salvar_arquivos:
                 arq = open(nome_arq, 'w')
                 arq.write(processo_inutilizacao_nfe.xml.encode('utf-8'))
                 arq.close()
@@ -618,16 +626,19 @@ class ProcessadorNFe(object):
         envio.chNFe.valor = chave_nfe
 
         envio.validar()
+        nome_arq = self.caminho + unicode(chave_nfe).strip().rjust(44, '0') + '-ped-sit.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': envio.xml })
         if self.salvar_arquivos:
-            arq = open(self.caminho + unicode(chave_nfe).strip().rjust(44, '0') + '-ped-sit.xml', 'w')
+            arq = open(nome_arq, 'w')
             arq.write(envio.xml.encode('utf-8'))
             arq.close()
 
         self._conectar_servico(WS_NFE_CONSULTA, envio, resposta, ambiente)
 
         #resposta.validar()
-        if self.salvar_arquivos:
-            nome_arq = self.caminho + unicode(chave_nfe).strip().rjust(44, '0') + '-sit.xml'
+        nome_arq = self.caminho + unicode(chave_nfe).strip().rjust(44, '0') + '-sit.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': resposta.xml })
+        if self.salvar_arquivos:            
             arq = open(nome_arq, 'w')
             arq.write(resposta.xml.encode('utf-8'))
             arq.close()
@@ -637,7 +648,7 @@ class ProcessadorNFe(object):
         # Se a NF-e tiver sido informada, montar o processo da NF-e
         #
         if nfe:
-           nfe.procNFe = self.montar_processo_uma_nota(nfe, protnfe_recibo=resposta.protNFe)
+            nfe.procNFe = self.montar_processo_uma_nota(nfe, protnfe_recibo=resposta.protNFe)
 
         return processo
 
@@ -663,16 +674,20 @@ class ProcessadorNFe(object):
         envio.data        = datetime.now()
 
         envio.validar()
+        nome_arq = self.caminho + envio.data.strftime('%Y%m%dT%H%M%S') + '-ped-sta.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': envio.xml })
         if self.salvar_arquivos:
-            arq = open(self.caminho + envio.data.strftime('%Y%m%dT%H%M%S') + '-ped-sta.xml', 'w')
+            arq = open(nome_arq, 'w')
             arq.write(envio.xml.encode('utf-8'))
             arq.close()
 
         self._conectar_servico(WS_NFE_SITUACAO, envio, resposta, ambiente)
 
         #resposta.validar()
+        nome_arq = self.caminho + envio.data.strftime('%Y%m%dT%H%M%S') + '-sta.xml'
+        processo.arquivos.append({ 'arquivo': nome_arq, 'xml': resposta.xml })
         if self.salvar_arquivos:
-            arq = open(self.caminho + envio.data.strftime('%Y%m%dT%H%M%S') + '-sta.xml', 'w')
+            arq = open(nome_arq, 'w')
             arq.write(resposta.xml.encode('utf-8'))
             arq.close()
 
