@@ -57,7 +57,7 @@ from time import mktime
 from OpenSSL import crypto
 import unicodedata
 import base64
-
+from uuid import uuid4
 
 DIRNAME = os.path.dirname(__file__)
 
@@ -255,6 +255,13 @@ class Certificado(object):
     def assina_xmlnfe(self, doc):
         if not isinstance(doc, XMLNFe):
             raise ValueError('O documento nao e do tipo esperado: XMLNFe')
+
+        if self.stream_certificado:
+            caminho_temporario = '/tmp/'
+            self.arquivo = caminho_temporario + uuid4().hex
+            arq_tmp = open(self.arquivo, 'w')
+            arq_tmp.write(self.stream_certificado)
+            arq_tmp.close()
 
         # Realiza a assinatura
         xml = self.assina_xml(doc.xml)
