@@ -257,8 +257,8 @@ class ProcessadorNFe(object):
                 self._url      = webservices_3.SVAN[ambiente][servico]
 
             elif self.contingencia_SCAN or self.contingencia:
-                self._servidor = webservices_3.ESTADO_WS_CONTINGENCIA[ambiente]['servidor']
-                self._url      = webservices_3.ESTADO_WS_CONTINGENCIA[ambiente][servico]
+                self._servidor = webservices_3.ESTADO_WS_CONTINGENCIA[self.estado][ambiente]['servidor']
+                self._url      = webservices_3.ESTADO_WS_CONTINGENCIA[self.estado][ambiente][servico]
 
             else:
                 #
