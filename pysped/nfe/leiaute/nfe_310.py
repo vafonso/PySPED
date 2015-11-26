@@ -802,6 +802,13 @@ class Comb(nfe_200.Comb):
     def __init__(self):
         super(Comb, self).__init__()
         self.pMixGN = TagDecimal(nome='pMixGN', codigo='LA03', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # TODO: Corrigir tags combustivel
+        # self.encerrante = TagDecimal(nome='encerrante', codigo='LA11', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.nBico = TagDecimal(nome='nBico', codigo='LA12', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.nBomba = TagDecimal(nome='nBomba', codigo='LA13', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.nTanque = TagDecimal(nome='nTanque', codigo='LA14', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.vEncIni = TagDecimal(nome='vEncIni', codigo='LA15', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.vEncFin = TagDecimal(nome='vEncFin', codigo='LA15', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
 
     def get_xml(self):
         if not self.cProdANP.valor:
