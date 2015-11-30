@@ -846,6 +846,13 @@ class Comb(nfe_200.Comb):
     def __init__(self):
         super(Comb, self).__init__()
         self.pMixGN = TagDecimal(nome='pMixGN', codigo='LA03', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # TODO: Corrigir tags combustivel
+        # self.encerrante = TagDecimal(nome='encerrante', codigo='LA11', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.nBico = TagDecimal(nome='nBico', codigo='LA12', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.nBomba = TagDecimal(nome='nBomba', codigo='LA13', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.nTanque = TagDecimal(nome='nTanque', codigo='LA14', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.vEncIni = TagDecimal(nome='vEncIni', codigo='LA15', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
+        # self.vEncFin = TagDecimal(nome='vEncFin', codigo='LA15', tamanho=[1, 2, 1], decimais=[0, 4, 4], raiz='//det/prod/comb', obrigatorio=False)
 
     def get_xml(self):
         if not self.cProdANP.valor:
@@ -1022,6 +1029,7 @@ class Prod(nfe_200.Prod):
         #self.nItemPed = TagCaracter(nome='nItemPed', codigo='I31' , tamanho=[1,  6],                         raiz='//det/prod', obrigatorio=False)
         #self.nFCI     = TagCaracter(nome='nFCI'    , codigo='I70' , tamanho=[36, 36, 36],                    raiz='//det/prod', obrigatorio=False)
         self.NVE = TagCaracter(nome='NVE', codigo='I05', tamanho=[0, 8], raiz='//det/prod', obrigatorio=False)
+        self.CEST = TagCaracter(nome='CEST', codigo='I05c', tamanho=[0, 7], raiz='//det/prod', obrigatorio=False)
         self.detExport = DetExport()
         self.veicProd = VeicProd()
         self.comb     = Comb()
@@ -1036,6 +1044,7 @@ class Prod(nfe_200.Prod):
         xml += self.xProd.xml
         xml += self.NCM.xml
         xml += self.NVE.xml
+        xml += self.CEST.xml
         xml += self.EXTIPI.xml
         #xml += self.genero.xml
         xml += self.CFOP.xml
@@ -1079,6 +1088,8 @@ class Prod(nfe_200.Prod):
             self.cEAN.xml     = arquivo
             self.xProd.xml    = arquivo
             self.NCM.xml      = arquivo
+            self.NVE.xml      = arquivo
+            self.CEST.xml      = arquivo
             self.EXTIPI.xml   = arquivo
             #self.genero.xml   = arquivo
             self.CFOP.xml     = arquivo
@@ -1470,8 +1481,8 @@ class Total(nfe_200.Total):
 class AutXML(XMLNFe):
     def __init__(self):
         super(AutXML, self).__init__()
-        self.CNPJ = TagCaracter(nome='CNPJ'  , codigo='X04', tamanho=[14, 14], raiz='/', obrigatorio=False)
-        self.CPF  = TagCaracter(nome='CPF'   , codigo='X05', tamanho=[11, 11], raiz='/', obrigatorio=False)
+        self.CNPJ = TagCaracter(nome='CNPJ'  , codigo='GA02', tamanho=[14, 14],  raiz='/', obrigatorio=False)
+        self.CPF  = TagCaracter(nome='CPF'   , codigo='GA03', tamanho=[11, 11], raiz='/', obrigatorio=False)
 
     def get_xml(self):
         xml = XMLNFe.get_xml(self)
