@@ -164,7 +164,7 @@ class ConexaoHTTPS(HTTPSConnection):
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file, ssl_version=ssl.PROTOCOL_SSLv3)
+        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file, ssl_version=ssl.PROTOCOL_SSLv3, do_handshake_on_connect=False)
 
 
 class ProcessadorNFe(object):
@@ -290,6 +290,11 @@ class ProcessadorNFe(object):
         #
         if self.estado == 'CE' or servico == WS_DFE_DISTRIBUICAO:
             self._soap_envio.soap_action_webservice_e_metodo = True
+
+            if servico == WS_NFE_AUTORIZACAO:
+                self._soap_envio.metodo = 'nfeAutorizacaoLote'
+            elif servico == WS_NFE_CONSULTA_AUTORIZACAO:
+                self._soap_envio.metodo = 'nfeRetAutorizacaoLote'
 
         self._soap_retorno.webservice = self._soap_envio.webservice
         self._soap_retorno.metodo     = self._soap_envio.metodo
@@ -794,13 +799,18 @@ class ProcessadorNFe(object):
             yield proc_consulta
 
             #
-            # Se a nota já constar na SEFAZ
+            # Se a nota já constar na SEFAZ (autorizada ou denegada)
             #
-            if not (
-                ((self.versao == '1.10') and (proc_consulta.resposta.infProt.cStat.valor in ('217', '999',)))
-                or
-                ((self.versao in ['2.00', '3.10']) and (proc_consulta.resposta.cStat.valor in ('217', '999',)))
-            ):
+            #if not (
+                #((self.versao == '1.10') and (proc_consulta.resposta.infProt.cStat.valor in ('217', '999',)))
+                #or
+                #((self.versao in ['2.00', '3.10']) and (proc_consulta.resposta.cStat.valor in ('217', '999',)))
+            #):
+            if (
+                 ((self.versao == '1.10') and (proc_consulta.resposta.infProt.cStat.valor in ('217', '999',)))
+                 or
+                ((self.versao in ['2.00', '3.10']) and (proc_consulta.resposta.cStat.valor in ('100', '150', '110', '301', '302')))
+             ):
                 #
                 # Interrompe todo o processo
                 #
