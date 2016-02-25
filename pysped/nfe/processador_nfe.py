@@ -164,7 +164,7 @@ class ConexaoHTTPS(HTTPSConnection):
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file, ssl_version=ssl.PROTOCOL_SSLv3)
+        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file, ssl_version=ssl.PROTOCOL_TLSv1) #SSLv3 desativado
 
 
 class ProcessadorNFe(object):
@@ -378,7 +378,7 @@ class ProcessadorNFe(object):
                 nfe.infNFe.dest.xNome.valor = 'NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL'
                 nfe.infNFe.dest.IE.valor = ''
                 if self.versao == '3.10':
-                    nfe.infNFe.dest.indIEDest.valor = '2'
+                    nfe.infNFe.dest.indIEDest.valor = '9' #Não contribuinte ICMS. Devido a nova regra SEFAZ
 
         processo = ProcessoNFe(webservice=WS_NFE_ENVIO_LOTE, envio=envio, resposta=resposta)
 
